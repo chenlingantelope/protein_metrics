@@ -1,0 +1,1 @@
+UNIREF50 = '/Users/xu26/Work/overlapDP/data/uniref50.fasta'
