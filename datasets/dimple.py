@@ -51,8 +51,11 @@ seq = fasta.get_sequence(seq)
 wt = seq[582:1893].translate(complete=True)
 dimple.get_wt(wt, 'Kir21')
 
+
 # mutate the wildtype sequence
 data = pd.read_csv(os.path.join(dimple.dir, url_files[1]), sep='\t')
+
+
 variants = [mutate_wt(wt, x) for x in data['hgvs']]
 variantid = list(data['hgvs'])
 dimple.get_design_sequence(variants, variantid, data['score'])
