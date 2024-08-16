@@ -37,21 +37,22 @@ def mutate_wt(wt, x):
 
 
 dimple = Dataset('dimple')
-urls = ['https://static-content.springer.com/esm/art%3A10.1186%2Fs13059-023-02880-6/MediaObjects/13059_2023_2880_MOESM1_ESM.csv',
-        'https://static-content.springer.com/esm/art%3A10.1186%2Fs13059-023-02880-6/MediaObjects/13059_2023_2880_MOESM2_ESM.txt',
+urls = ['https://static-content.springer.com/esm/art%3A10.1186%2Fs13059-023-02880-6/MediaObjects/13059_2023_2880_MOESM2_ESM.txt',
         'https://raw.githubusercontent.com/odcambc/DIMPLE/master/tests/Kir.fa']
 
-url_files = ['seq.csv', 'score.txt', 'wt.fa']
+url_files = ['score.txt', 'wt.fa']
 for i,x in enumerate(urls):
     dimple.download_from_url(x, url_files[i])
 
 # read the wt.fa file
-seq = fasta.FastaFile.read(os.path.join(dimple.dir, url_files[2]))
+seq = fasta.FastaFile.read(os.path.join(dimple.dir, url_files[1]))
 seq = fasta.get_sequence(seq)
 wt = seq[582:1893].translate(complete=True)
 dimple.get_wt(wt, 'Kir21')
-
-
+# write the wt sequence to a file
+with open(os.path.join(dimple.dir, 'Kir21.fa'), 'w') as f:
+    f.write(f'>Kir21\n{wt}\n')
+f.close()
 # mutate the wildtype sequence
 data = pd.read_csv(os.path.join(dimple.dir, url_files[1]), sep='\t')
 
@@ -63,3 +64,41 @@ dimple.get_design_sequence(variants, variantid, data['score'])
 # get msa alignment
 dimple.get_msa(os.path.join(dimple.dir, 'wt.fa'))
 dimple.get_hmm()
+
+dimple.get_pdb_sequence('3SPI')
+
+
+from external.ProteinMPNN.protein_mpnn_utils import parse_PDB, ProteinMPNN
+import torch
+pdb_dict_list = parse_PDB(dimple.pdb_file)
+checkpoint = torch.load('external/ProteinMPNN/vanilla_model_weights/v_48_030.pt')
+noise_level_print = checkpoint['noise_level']
+hidden_dim = 128
+num_layers = 3
+model = ProteinMPNN(ca_only=False, num_letters=21, node_features=hidden_dim, edge_features=hidden_dim,
+                    hidden_dim=hidden_dim, num_encoder_layers=num_layers, num_decoder_layers=num_layers,
+                    k_neighbors=checkpoint['num_edges'])
+model.load_state_dict(checkpoint['model_state_dict'])
+model.eval()
+
+# align the pdb sequence to the wildtype sequence
+
+pdb_dict_list[0]['num_of_chains']
+pdb_dict_list[0]['seq']
+# biotite pairwise align pdb sequence to wildtype sequence
+from biotite.sequence.align import align_optimal, SubstitutionMatrix
+
+alignment = align_optimal(ProteinSequence(pdb_dict_list[0]['seq']), dimple.wt,
+                          matrix=SubstitutionMatrix.std_protein_matrix(), local=True)
+
+for a in alignment:
+    print(a)
+
+len(alignment[0])
+len(pdb_dict_list[0]['seq'])
+len(dimple.wt)
+alignment[0].trace
+# subset the pdb_dict coordinates to only residues that are aligned to the wildtype sequence
+temp = pdb_dict_list[0]['coords_chain_A']
+temp.keys()
+pdb_dict_list[0]['seq_chain_A']

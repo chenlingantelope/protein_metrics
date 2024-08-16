@@ -1,7 +1,6 @@
 import numpy as np
 # HMM likelihood of sequence to HMM alignment
 def hmm_likelihood(seq, hmm):
-    i = 0
     j = -1
     ll = 0
     state = 'e'

@@ -7,7 +7,7 @@ from hmm import HMM
 from constants import UNIREF50
 # define dataset class
 class Dataset:
-    def __init__(self, name):
+    def __init__(self, name, local=False):
         self.name = name
         self.dir = f"datasets/{name}"
         if not os.path.exists(self.dir):
@@ -53,15 +53,16 @@ class Dataset:
                             f"{os.path.join(self.dir,self.genename)}.msa"])
         self.hmm = HMM(f"{os.path.join(self.dir,self.genename)}.hmm")
 
+    from external.ProteinMPNN.protein_mpnn_utils import parse_PDB, ProteinMPNN
 
-    def get_protein_sequence(self, idx):
-        pass
+    def get_pdb_sequence(self, pdbid):
+        from biotite.database.rcsb import fetch
+        self.pdbid = pdbid
+        fetch(pdbid, 'mmcif', self.dir)
+        fetch(pdbid, 'pdb', self.dir)
+        self.pdb_file = os.path.join(self.dir, f"{pdbid}.pdb")
+        self.mmcif_file = os.path.join(self.dir, f"{pdbid}.mmcif")
 
-    def get_wildtype_sequence(self):
-        pass
-
-    def get_pdb_sequence(self):
-        pass
 
     def download_from_url(self, url, filename):
         if url not in self.url:
