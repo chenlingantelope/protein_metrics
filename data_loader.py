@@ -4,7 +4,8 @@ import subprocess
 import requests
 import os
 from hmm import HMM
-from constants import UNIREF50
+from constants import UNIREF90
+from utils import read_dna
 # define dataset class
 class Dataset:
     def __init__(self, name, local=False):
@@ -26,7 +27,9 @@ class Dataset:
     def __getitem__(self, idx):
         return self.design_seqs[idx]
 
-    def get_wt(self, seq:ProteinSequence, genename:str):
+    def get_wt(self, seq:ProteinSequence, genename:str, read_from_file=False, filename=None):
+        if read_from_file:
+            seq = read_dna(os.path.join(self.dir, filename))
         self.wt = seq
         self.genename = genename
 
@@ -44,7 +47,7 @@ class Dataset:
     def get_msa(self, fasta_file):
         if not os.path.exists(os.path.join(self.dir, f"{self.genename}.msa")):
             subprocess.run(['jackhmmer', f"-A{os.path.join(self.dir, self.genename)}.msa",
-                            fasta_file, UNIREF50])
+                            fasta_file, UNIREF90])
         self.msa_file = f"{self.genename}.msa"
 
     def get_hmm(self):
@@ -79,3 +82,8 @@ class Dataset:
                 print(f"File downloaded successfully: {filename}")
             else:
                 print(f"Failed to download file. Status code: {response.status_code}")
+
+    def check_local_files(self, filename):
+        if not os.path.exists(f"{self.dir}/{filename}"):
+            return False
+        return True
