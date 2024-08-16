@@ -9,8 +9,9 @@ for f in ['aroB.fa', 'infA_aroB_20240411.csv']:
     aroB.check_local_files(f)
 
 aroB.get_wt('', 'aroB', read_from_file=True, filename='aroB.fa')
-# aroB.get_msa(os.path.join(aroB.dir, 'aroB.fa'))
-# aroB.get_hmm()
+aroB.get_msa(os.path.join(aroB.dir, 'aroB.fa'))
+aroB.get_hmm()
+
 aroB.get_pdb_sequence('5eks')
 
 def aroB_enrichment(design_seqs, subset):
