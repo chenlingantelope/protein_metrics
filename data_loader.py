@@ -6,6 +6,7 @@ import os
 from hmm import HMM
 from constants import UNIREF90
 from utils import read_dna
+
 # define dataset class
 class Dataset:
     def __init__(self, name, local=False):
