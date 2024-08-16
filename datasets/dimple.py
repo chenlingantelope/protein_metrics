@@ -66,39 +66,3 @@ dimple.get_msa(os.path.join(dimple.dir, 'wt.fa'))
 dimple.get_hmm()
 
 dimple.get_pdb_sequence('3SPI')
-
-
-from external.ProteinMPNN.protein_mpnn_utils import parse_PDB, ProteinMPNN
-import torch
-pdb_dict_list = parse_PDB(dimple.pdb_file)
-checkpoint = torch.load('external/ProteinMPNN/vanilla_model_weights/v_48_030.pt')
-noise_level_print = checkpoint['noise_level']
-hidden_dim = 128
-num_layers = 3
-model = ProteinMPNN(ca_only=False, num_letters=21, node_features=hidden_dim, edge_features=hidden_dim,
-                    hidden_dim=hidden_dim, num_encoder_layers=num_layers, num_decoder_layers=num_layers,
-                    k_neighbors=checkpoint['num_edges'])
-model.load_state_dict(checkpoint['model_state_dict'])
-model.eval()
-
-# align the pdb sequence to the wildtype sequence
-
-pdb_dict_list[0]['num_of_chains']
-pdb_dict_list[0]['seq']
-# biotite pairwise align pdb sequence to wildtype sequence
-from biotite.sequence.align import align_optimal, SubstitutionMatrix
-
-alignment = align_optimal(ProteinSequence(pdb_dict_list[0]['seq']), dimple.wt,
-                          matrix=SubstitutionMatrix.std_protein_matrix(), local=True)
-
-for a in alignment:
-    print(a)
-
-len(alignment[0])
-len(pdb_dict_list[0]['seq'])
-len(dimple.wt)
-alignment[0].trace
-# subset the pdb_dict coordinates to only residues that are aligned to the wildtype sequence
-temp = pdb_dict_list[0]['coords_chain_A']
-temp.keys()
-pdb_dict_list[0]['seq_chain_A']

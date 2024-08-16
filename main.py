@@ -5,6 +5,11 @@ from datasets.aroB import load_dataset
 from basic_metrics import all_basic_metrics
 from msa_metrics import hmm_likelihood
 
+from datasets.infA import infA
+from datasets.aroB import aroB
+from datasets.dimple import dimple
+infA.design_seqs_score
+aroB.pdb_file
 design_seqs, pdb_seq, wildtype_seq, hmm, coords = load_dataset('aroB')
 # Check that the sequence length correspond to the gene profile length
 for seq in design_seqs + [pdb_seq] + [wildtype_seq]:

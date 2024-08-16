@@ -49,3 +49,4 @@ pip install fair-esm
 # !pip install -q torch-spline-conv -f https://data.pyg.org/whl/torch-{TORCH}+{CUDA}.html > /dev/null
 # !pip install -q torch-geometric > /dev/null
 # ### END OF CODE FROM ESM-IF
+export PATH=/usr/workspace/xu26//hmmer-3.4/bin/:$PATH

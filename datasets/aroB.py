@@ -1,46 +1,65 @@
-# data is copied from the entropy project in data repo
-# set working directory
+import pandas as pd
+from data_loader import Dataset
+from biotite.sequence import ProteinSequence, NucleotideSequence
+import numpy as np
 import os
-os.chdir("/")
-# import seqIO to read fasta files
-from Bio import SeqIO
-from Bio.Seq import Seq
-import os
-from hmm_profile import reader
-from esm.inverse_folding.util import load_coords
 
+aroB = Dataset('aroB')
+for f in ['aroB.fa', 'infA_aroB_20240411.csv']:
+    aroB.check_local_files(f)
 
-# read aroB_design.fasta using biopython
-def load_dataset(dataset_name, recompute=False):
-    if dataset_name =='aroB':
-        # convert design_seqs and pdb sequence to the MSA coordinate
-        # first create a gene profile using hmmbuild
-        # check if the output file exists
-        if (not os.path.exists("../seqs/aroB.hmm")) or recompute:
-            # build a gene profile using hmmbuild
-            assert os.system("hmmbuild -n aroB -o seqs/aroB.hmmbuild.out seqs/aroB.hmm seqs/aroB_msa.fasta") == 0
-        with open("../seqs/aroB.hmm") as f:
-            hmm = reader.read_single(f)
-            # then align all three sets of fasta sequences to the gene profile so that they share the same coordinate system
-        pdb = 'seqs/5eks.pdb'
-        coords, pdb_seq = load_coords(pdb, "A")
-        # write pdb_seq to a fasta file
+aroB.get_wt('', 'aroB', read_from_file=True, filename='aroB.fa')
+# aroB.get_msa(os.path.join(aroB.dir, 'aroB.fa'))
+# aroB.get_hmm()
+aroB.get_pdb_sequence('5eks')
 
-        if (not os.path.exists("../seqs/aroB_design.a2m")) or recompute:
-            assert os.system("hmmalign --outformat a2m -o seqs/aroB_design.a2m seqs/aroB.hmm seqs/aroB_design.fasta") == 0
-        if (not os.path.exists("../seqs/5eks.a2m")) or recompute:
-            with open("../seqs/5eks.fasta", "w") as f:
-                f.write(f">5eks\n{pdb_seq}")
-            f.close()
-            assert os.system("hmmalign --outformat a2m -o seqs/5eks.a2m seqs/aroB.hmm seqs/5eks.fasta") == 0
-        if (not os.path.exists("../seqs/aroB.a2m")) or recompute:
-            assert os.system("hmmalign --outformat a2m -o seqs/aroB.a2m seqs/aroB.hmm seqs/aroB.fasta") == 0
-        # read the aligned sequences
-        design_seqs = list(SeqIO.parse("seqs/aroB_design.a2m", "fasta"))
-        pdb_seq = list(SeqIO.parse("seqs/5eks.a2m", "fasta"))[0]
-        wildtype_seq = list(SeqIO.parse("seqs/aroB.a2m", "fasta"))[0]
+def aroB_enrichment(design_seqs, subset):
+    if subset in ['ERP017','ERP766']:
+        design_seqs = design_seqs[design_seqs['aroB_location']==subset]
+    elif subset == 'all':
+        pass
     else:
-        raise ValueError("dataset_name should be either 'aroB' or 'infA'")
-    # convert wildtype to SeqRecord object
-    return design_seqs, pdb_seq, wildtype_seq, hmm, coords
+        raise ValueError('subset must be ERP017, ERP766 or all')
+    full_seq = design_seqs['full_seq'].values
+    prot_seq = [NucleotideSequence(seq).translate(complete=True) for seq in full_seq]
+    variant_id = design_seqs['unique_seq_id'].values
+    # check that the log enrichement is the log of the enrichment
+    assert (np.log(design_seqs['enrichment_aroB_1'][:50])-design_seqs['log_enrichment_aroB_1'][:50].astype(float) < 1e-6).sum() == 50
+    assert (np.log(design_seqs['enrichment_aroB_2'][:50])-design_seqs['log_enrichment_aroB_2'][:50].astype(float) < 1e-6).sum() == 50
+    assert (np.log(design_seqs['enrichment_aroB_3'][:50])-design_seqs['log_enrichment_aroB_3'][:50].astype(float) < 1e-6).sum() == 50
+    for i in [1,2,3]:
+        design_seqs.loc[:,f'log_enrichment_aroB_{i}'] = np.log(design_seqs[f'enrichment_aroB_{i}']+1e-20)
 
+    # not going to care about the wt enrichment for now
+    # plot the correlation between the log enrichement for the 3 assays
+    """
+    The following section checks the correlation between the log enrichments for the 3 assays
+    The correlation is high between the assays and we use the average of the 3 assays as the target
+    """
+    # import seaborn as sns
+    # import matplotlib.pyplot as plt
+    # # make a figure with 3 subplots
+    # fig, ax = plt.subplots(1,3, figsize=(20, 8))
+    # # plot the scatter plots
+    # sns.scatterplot(x='log_enrichment_aroB_1', y='log_enrichment_aroB_2', data=design_seqs, ax=ax[0])
+    # sns.scatterplot(x='log_enrichment_aroB_1', y='log_enrichment_aroB_3', data=design_seqs, ax=ax[1])
+    # sns.scatterplot(x='log_enrichment_aroB_2', y='log_enrichment_aroB_3', data=design_seqs, ax=ax[2])
+    # plt.show()
+    # plt.close()
+    scores = design_seqs[[f'log_enrichment_aroB_{i}' for i in [1,2,3]]].mean(axis=1)
+    return prot_seq, variant_id, scores
+
+design_seqs = pd.read_csv(os.path.join(aroB.dir, 'infA_aroB_20240411.csv'))
+# wt_info = design_seqs[design_seqs['unique_seq_id']=='seq_0001']
+# wt_info['enrichment_aroB_3']
+# design_seqs.columns
+"""
+drop sequences that do not contain entangled sequences 
+"""
+design_seqs = design_seqs.dropna(subset=['full_seq'])
+"""
+add design sequence to object 
+"""
+aroB.get_design_sequence(*aroB_enrichment(design_seqs, 'all'))
+# there are two subsets of sequences in the csv file based on aroB_location
+aroB.design_seqs_score

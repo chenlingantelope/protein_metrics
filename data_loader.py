@@ -56,8 +56,6 @@ class Dataset:
                             f"{os.path.join(self.dir,self.genename)}.msa"])
         self.hmm = HMM(f"{os.path.join(self.dir,self.genename)}.hmm")
 
-    from external.ProteinMPNN.protein_mpnn_utils import parse_PDB, ProteinMPNN
-
     def get_pdb_sequence(self, pdbid):
         from biotite.database.rcsb import fetch
         self.pdbid = pdbid
