@@ -1,5 +1,6 @@
 from copy import deepcopy
 import numpy as np
+from biotite.sequence.io.fasta import FastaFile
 
 def msa_to_unmapped_seq_coord(seq, reverse=False):
     """
@@ -59,3 +60,15 @@ def aligned_to_raw_seq(aligned_seq):
     :return: return the input sequence before aligning to HMM profile
     """
     return aligned_seq.replace("-", "").upper()
+
+
+def read_dna(file, single=True):
+    seqs = FastaFile.read(file)
+    genes = {}
+    for genename, seq in seqs.items():
+        genes[genename] = seq
+    if single:
+        return seq
+    else:
+        return genes
+
