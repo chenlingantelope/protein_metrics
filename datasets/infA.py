@@ -10,8 +10,8 @@ for f in ['infA_aroB_20240411.csv','infA.fa']:
     infA.check_local_files(f)
 
 infA.get_wt('', 'infA', read_from_file=True, filename='infA.fa')
-# infA.get_msa(os.path.join(infA.dir, 'infA.fa'))
-# infA.get_hmm()
+infA.get_msa(os.path.join(infA.dir, 'infA.fa'))
+infA.get_hmm()
 
 infA.get_pdb_sequence('2n78')
 
