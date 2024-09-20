@@ -7,100 +7,89 @@ from biotite.application.blast import BlastWebApp
 from biotite.database import entrez
 from tempfile import gettempdir
 
-# def mutate_wt(wt, x):
-#     if x == '_wt':
-#         return wt
-#     else:
-#         x = x.split('(')[1].split(')')[0]
-#     if 'ins' in x:
-#         pos = int(x.split('_')[0][1:])
-#         ins = x.split('ins')[1]
-#         assert wt[pos-1] == x[0]
-#         return wt[:pos-1] + ProteinSequence(ins) + wt[pos-1:]
-#     elif 'del' in x:
-#         x = x.replace('del', '')
-#         if '_' in x:
-#             x1 = int(x.split('_')[0][1:])
-#             x2 = int(x.split('_')[1][1:])
-#             assert wt[x1-1] == x.split('_')[0][0]
-#             assert wt[x2-1] == x.split('_')[1][0]
-#             return wt[:x1-1] + wt[x2-1:]
-#         else:
-#             x1 = int(x[1:])
-#             assert wt[x1-1] == x[0]
-#             return wt[:x1-1] + wt[x1:]
-#     else:
-#         pos = int(x[1:-1])
-#         assert wt[pos-1] == x[0]
-#         return wt[:pos-1] + ProteinSequence(x[-1]) + wt[pos:]
+geneNames = ['fabZ', 'lpxC', 'murA']
+pdbIDs = ['6N3P', '4MQY', '1UAE']
+authorName = 'dewachter2023'
+datasetNames = []
 
-dewachter2023 = Dataset('dewachter2023')
-# urls = ['https://static-content.springer.com/esm/art%3A10.1038%2Fs41467-023-35940-3/MediaObjects/41467_2023_35940_MOESM7_ESM.csv',
-#         'https://raw.githubusercontent.com/odcambc/DIMPLE/master/tests/Kir.fa']
+# Create dataset names
+for gene in geneNames:
+    datasetNames.append(f'{authorName}_{gene}')
 
-#Read the fabZ.fa folder to get the sequence
-dewachter2023.get_wt('', 'fabZ', read_from_file=True, filename='fabZ.fa')
+# Create Dataset objects and store them in a new list
+datasets = [Dataset(name) for name in datasetNames]
 
-# url_files = ['score.txt', 'wt.fa']
+urls = [
+    'https://static-content.springer.com/esm/art%3A10.1038%2Fs41467-023-35940-3/MediaObjects/41467_2023_35940_MOESM7_ESM.csv',
+    'https://rest.uniprot.org/uniprotkb/P0A6Q6.fasta',  # fabZ
+    'https://rest.uniprot.org/uniprotkb/P0A725.fasta',  # lpxC
+    'https://rest.uniprot.org/uniprotkb/P0A749.fasta'  # murA
+]
 
-# for i,x in enumerate(urls):
-#     dewachter2023.download_from_url(x, url_files[i])
-#
-# # read the wt.fa file
-# seq = fasta.FastaFile.read(os.path.join(dimple.dir, url_files[1]))
-# seq = fasta.get_sequence(seq)
-# wt = seq[582:1893].translate(complete=True)
-# dimple.get_wt(wt, 'Kir21')
-# # write the wt sequence to a file
-# with open(os.path.join(dimple.dir, 'Kir21.fa'), 'w') as f:
-#     f.write(f'>Kir21\n{wt}\n')
-# f.close()
-# # mutate the wildtype sequence
-# data = pd.read_csv(os.path.join(dimple.dir, url_files[1]), sep='\t')
-#
-#
-# variants = [mutate_wt(wt, x) for x in data['hgvs']]
-# variantid = list(data['hgvs'])
-# dimple.get_design_sequence(variants, variantid, data['score'])
-#
-# # get msa alignment
-# dimple.get_msa(os.path.join(dimple.dir, 'wt.fa'))
-# dimple.get_hmm()
-#
-# dimple.get_pdb_sequence('3SPI')
-#
-#
-# from external.ProteinMPNN.protein_mpnn_utils import parse_PDB, ProteinMPNN
-# import torch
-# pdb_dict_list = parse_PDB(dimple.pdb_file)
-# checkpoint = torch.load('external/ProteinMPNN/vanilla_model_weights/v_48_030.pt')
-# noise_level_print = checkpoint['noise_level']
-# hidden_dim = 128
-# num_layers = 3
-# model = ProteinMPNN(ca_only=False, num_letters=21, node_features=hidden_dim, edge_features=hidden_dim,
-#                     hidden_dim=hidden_dim, num_encoder_layers=num_layers, num_decoder_layers=num_layers,
-#                     k_neighbors=checkpoint['num_edges'])
-# model.load_state_dict(checkpoint['model_state_dict'])
-# model.eval()
-#
-# # align the pdb sequence to the wildtype sequence
-#
-# pdb_dict_list[0]['num_of_chains']
-# pdb_dict_list[0]['seq']
-# # biotite pairwise align pdb sequence to wildtype sequence
-# from biotite.sequence.align import align_optimal, SubstitutionMatrix
-#
-# alignment = align_optimal(ProteinSequence(pdb_dict_list[0]['seq']), dimple.wt,
-#                           matrix=SubstitutionMatrix.std_protein_matrix(), local=True)
-#
-# for a in alignment:
-#     print(a)
-#
-# len(alignment[0])
-# len(pdb_dict_list[0]['seq'])
-# len(dimple.wt)
-# alignment[0].trace
-# # subset the pdb_dict coordinates to only residues that are aligned to the wildtype sequence
-# temp = pdb_dict_list[0]['coords_chain_A']
-# temp.keys()
-# pdb_dict_list[0]['seq_chain_A']
+url_files = [
+    'score.txt',
+    f'{geneNames[0]}_fasta.fa',
+    f'{geneNames[1]}_fasta.fa',
+    f'{geneNames[2]}_fasta.fa'
+]
+
+# Download files
+for i, dataset in enumerate(datasets):
+    # Download the score file
+    dataset.download_from_url(urls[0], url_files[0])
+
+    # Download the corresponding FASTA file based on the gene name
+    fasta_index = i + 1  # Index 1 corresponds to the first FASTA file (fabZ)
+    dataset.download_from_url(urls[fasta_index], url_files[fasta_index])
+
+# Read wild-type sequences
+wt_fabZ = fasta.get_sequence(fasta.FastaFile.read(os.path.join(datasets[0].dir, url_files[1])))
+wt_lpxC = fasta.get_sequence(fasta.FastaFile.read(os.path.join(datasets[1].dir, url_files[2])))
+wt_murA = fasta.get_sequence(fasta.FastaFile.read(os.path.join(datasets[2].dir, url_files[3])))
+
+for i, gene in enumerate(geneNames):
+    # Load the score data
+    data = pd.read_csv(os.path.join(datasets[i].dir, url_files[0]), sep=';')
+
+    # Replace comma with dot and convert to float
+    data['CompetitionCoefficient'] = data['CompetitionCoefficient'].str.replace(',', '.').astype(float)
+
+    # Filter the data to keep only rows with the relevant GeneName
+    data = data[data['GeneName'] == gene]
+
+    # Save the filtered data back to a new score file (or overwrite)
+    data.to_csv(os.path.join(datasets[i].dir, url_files[0]), sep=';', index=False)
+
+    # Modify the mutate_sequence function to dynamically pick the correct WT sequence based on gene name
+    def mutate_sequence(wt_sequence, position, mutated_aa, target_aa):
+        # Convert the biotite sequence object to a string
+        wt_sequence_str = str(wt_sequence)
+
+        # Convert the 1-based position to 0-based index for Python string manipulation
+        pos_index = position - 1
+
+        if pos_index < 0 or pos_index >= len(wt_sequence_str):
+            return None  # Index out of bounds
+
+        if wt_sequence_str[pos_index] == target_aa:
+            # Perform the mutation
+            return wt_sequence_str[:pos_index] + mutated_aa + wt_sequence_str[pos_index + 1:]
+        else:
+            # If the expected amino acid does not match the wild-type sequence at the position
+            return None
+
+    # Apply the mutation function to each row for the current dataset
+    data['mutated_seq'] = data.apply(lambda row: mutate_sequence(
+        wt_fabZ if gene == 'fabZ' else (wt_lpxC if gene == 'lpxC' else wt_murA),
+        row['TargetAaPosition'],
+        row['MutatedAa'],
+        row['TargetAa']
+    ), axis=1)
+
+    # Create the ID column that combines GeneName and cumcount with an underscore
+    data['ID'] = data['GeneName'] + '_' + data.groupby('GeneName').cumcount().astype(str)
+
+    # Save the modified DataFrame to a new CSV file
+    data.to_csv(os.path.join(datasets[i].dir, f'filtered_{gene}_output_data.csv'), index=False)
+    datasets[i].get_design_sequence(list(data['mutated_seq']), list(data['ID']), list(data['CompetitionCoefficient']))
+    datasets[i].get_pdb_sequence(pdbIDs[i])
