@@ -70,7 +70,7 @@ class Dataset:
         if url not in self.url:
             self.url.append(url)
             self.url_filename.append(filename)
-            response = requests.get(url)
+            response = requests.get(url, verify=False)
             # Check if the request was successful (status code 200)
             if response.status_code == 200:
                 # Open a file in write-binary mode

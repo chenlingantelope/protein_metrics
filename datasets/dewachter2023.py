@@ -1,3 +1,11 @@
+###
+# NOTE TO SELF: This script takes the .csv from the paper and parses it out into three datasets,
+# each with their own wildtypes and scores. The wildtype sequences are obtained by going to accession number
+# at UniProt and extracting the FASTA from there. The PDBs come from the UniProt's link.
+# In the for loop, each gene is iterated through to generate the data in the right format needed for the
+# function "get_design_sequence".
+
+
 import os
 import pandas as pd
 from data_loader import Dataset
